@@ -4,15 +4,42 @@
 
 <PageTitle>Task Management</PageTitle>
 
-<div>
-    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
-        75 Hard Investment
-    </h1>
+<Modal @ref="modal" />
 
-    <h2>
-        This page is used to manage individual tasks.
-    </h2>
-    <Button Color="ButtonColor.Success" @onclick="NewTaskComponent">
+<Modal @ref="modal2">
+    <BodyTemplate>
+        <EditForm Model="@task" OnValidSubmit="@createNewTask" FormName="CreateTaskForm">
+            <div class="row">
+                <label for="taskName">
+                    Task Name:
+                </label><br />
+                <input @bind-value="task!.taskName" name="taskName" type="text" style="width: inherit;" />
+            </div>
+            <div class="row">
+                <div class="col-5 col-md-3 text-end">Task Description :</div>
+                <div class="col-7 col-md-9">@task?.taskDescription</div>
+            </div>
+        </EditForm>
+    </BodyTemplate>
+    <FooterTemplate>
+        <button class="btn btn-success col-6">
+            Create New Task
+        </button>
+    </FooterTemplate>
+</Modal>
+
+<div>
+    <div style="margin-bottom: 30px;">
+        <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+            Task Management
+        </h1>
+
+        <p>
+            This page is used to manage individual tasks.
+        </p>
+    </div>
+    
+    <Button Color="ButtonColor.Success" @onclick="NewTaskComponent" Style="margin-bottom:10px;">
         Add Task
     </Button>
     
@@ -23,7 +50,7 @@
           DataProvider="TasksDataProvider"
       AllowFiltering="true"
       Responsive="true"
-    EmptyText="No records to display">
+    EmptyText="There are no active tasks.">
 
         <GridColumn TItem="Hard75Shared.Task" HeaderText="Name" PropertyName="Name">
             @context.taskName
@@ -37,32 +64,6 @@
             </ChildContent>
         </GridColumn>
     </Grid>
-
-    
-
-    @if (currentTasks == null)
-    {
-        <p><em>There are currently no tasks</em></p>
-    }
-    else
-    {
-        <table>
-            
-            @foreach (Hard75Shared.Task task in currentTasks)
-            {
-                <tr style="padding-left:30px;">
-                    <td>
-                        task.taskName
-                    </td>
-                    <td>
-                        <Button>
-                            Edit
-                        </Button>
-                    </td>
-                </tr>
-            }
-        </table>
-    }
 </div>
 
 @inject NavigationManager UriHelper
@@ -78,8 +79,9 @@
     BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
     private IEnumerable<Hard75Shared.Task> tasks = default!;
     private Modal modal = default!;
+    private Modal modal2 = default!;
     string userEmail;
-
+    public Hard75Shared.Task task;
     protected override async Task OnInitializedAsync()
     {
         userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
@@ -142,7 +144,7 @@
     private async Task ShowTaskComponent(Hard75Shared.Task t) 
     {
         var parameters = new Dictionary<string, object>();
-        parameters.Add("action", "update"); 
+        parameters.Add("method", "update"); 
         parameters.Add("task", t);
         parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
         await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
@@ -151,13 +153,39 @@
     private async Task NewTaskComponent()
     {
         var parameters = new Dictionary<string, object>();
-        parameters.Add("action", "create"); 
+        parameters.Add("method", "create"); 
         parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
         await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
     }
 
     private void ShowDTMessage(MouseEventArgs e){
         successMessage = $"The current DT is: {DateTime.Now}.";
+    }
+
+    private async System.Threading.Tasks.Task createNewTask()
+
+    {
+
+
+
+        /*Hard75Shared.Response apiResponse = await TaskRepo.CreateTask(newuser);
+
+        if (apiResponse.statusCode < 100)
+
+        {
+
+            //errorMessage = apiResponse.message;
+
+        }
+
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+
+        {
+
+
+
+        }*/
+
     }
 
 }
