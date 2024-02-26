@@ -1,0 +1,147 @@
+﻿@page "/routine"
+@using Hard75Tracker.Models
+@using Newtonsoft.Json;
+@using Microsoft.Extensions.Logging;
+@using BootstrapBlazor;
+
+<PageTitle>Tasks</PageTitle>
+
+<div>
+    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+        75 Hard Investment
+    </h1>
+
+    <h2>
+        Day: @CurrentStreak <br/>
+        Best: @MaxStreak 
+    </h2>
+
+    <Grid @ref="grid"
+          TItem="Hard75Shared.Task"
+          Class="table table-hover table-bordered table-striped"
+          DataProvider="TasksDataProvider"
+          AllowFiltering="true"
+          Responsive="true"
+          EmptyText="No records to display">
+
+        <GridColumn TItem="Hard75Shared.Task" HeaderText="Name" PropertyName="Name">
+            @context.taskName
+        </GridColumn>
+        <GridColumn TItem="Hard75Shared.Task" Filterable="false" Sortable="false">
+            <HeaderContent>
+                Complete
+            </HeaderContent>
+            <ChildContent>
+                <Switch Value="agree" Label="Default switch checkbox input" />
+            </ChildContent>
+        </GridColumn>
+    </Grid>
+
+    @if ((currentTasks == null) || (currentTasks.Length == 0))
+    {
+        <p><em>There are currently no tasks</em></p>
+    }
+    else
+    {
+        <table>
+            @foreach (Hard75Shared.Task task in currentTasks)
+            {
+            <tr style="padding-left:30px;">
+                <input type="checkbox" name="task.taskName" />
+                <label for="task.taskName">task.taskName</label>
+            </tr>
+            }
+        </table>
+    }
+</div>
+
+@inject ITaskHttpRepository TaskRepo
+@inject SessionStorageAccessor SessionStorageAccessor
+@code {
+    public int CurrentStreak = 0;
+    public int MaxStreak = 0;
+    private Hard75Shared.Task[]? currentTasks;
+    string userID;
+    string userEmail;
+    string errorMessage;
+    BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
+    private IEnumerable<Hard75Shared.Task> tasks = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        userEmail = await SessionStorageAccessor.GetValueAsync<string>("userEmail");
+        Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+            //Success
+            if (apiResponse.message == "{}")
+            {
+                currentTasks = [];
+            }
+            else
+            {
+                Hard75Shared.Task[] currentTasks = JsonConvert.DeserializeObject<Hard75Shared.Task[]>(apiResponse.message);
+            }
+        }
+    }
+
+    private async Task<GridDataProviderResult<Hard75Shared.Task>> TasksDataProvider(GridDataProviderRequest<Hard75Shared.Task> request)
+    {
+        if (userID == null)
+        {
+            userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        }
+        Console.WriteLine(userID);
+        Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
+        if (tasks == null) // pull employees only one time for client-side filtering, sorting, and paging
+            tasks = GetListofTasks(apiResponse); // call a service or an API to pull the employees
+        Console.WriteLine("ReturnNothing");
+        Console.WriteLine(tasks);
+        if (tasks == null)
+        {
+            Console.WriteLine("Nothing");
+            return (new GridDataProviderResult<Hard75Shared.Task> { Data = new List<Hard75Shared.Task>(), TotalCount = 0 });
+        }
+        else
+        {
+            Console.WriteLine("Something");
+            return await Task.FromResult(request.ApplyTo(tasks));
+        }
+    }
+
+    private IEnumerable<Hard75Shared.Task> GetListofTasks(Hard75Shared.Response apiResponse)
+    {
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+            return currentTasks;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+            //Success
+            if (apiResponse.message == "{}")
+            {
+                return currentTasks;
+            }
+            else
+            {
+                List<Hard75Shared.Task> currentTasks = JsonConvert.DeserializeObject<List<Hard75Shared.Task>>(apiResponse.message);
+                return currentTasks;
+            }
+        }
+        else
+        {
+            return currentTasks;
+        }
+    }
+
+    private void completeTask()
+    {
+        
+    }
+}

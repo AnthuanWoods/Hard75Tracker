@@ -1,0 +1,100 @@
+﻿@page "/"
+@layout FullPageLayout
+@using Hard75Shared
+@using Hard75Tracker.Models
+@using Newtonsoft.Json;
+@using Microsoft.Extensions.Logging;
+@using BootstrapBlazor;
+
+<PageTitle>Home</PageTitle>
+
+<div>
+    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+        75 Hard Investment
+    </h1>
+    @if (errorMessage.Length > 0)
+    {
+    <div>
+        <!--<Alert ShowDismiss="false" Color="Color.Danger">@errorMessage</Alert>-->
+            <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
+    </div>
+    }
+    <div class="col-12 offset-sm-3 col-sm-6">
+        <EditForm Model="@userAttempt" OnValidSubmit="@AttemptLogin" FormName="LoginAttemptForm">
+            <div class="col-12" style="margin-bottom: 20px;">
+                <label for="email">
+                    Email:
+                </label><br/>
+                <input @bind-value="userAttempt!.email" name="email" type="text" style="width: inherit;" />
+            </div>
+            <div class="col-12" style="margin-bottom: 20px;">
+                <label for="pwd">
+                    Password:
+                </label> <br/>
+                <input @bind-value="userAttempt!.pwd" name="pwd" type="password" style="width: inherit;" />
+            </div>
+            <div class="col-12">
+                <button class="btn btn-success col-12">
+                    Login
+                </button>
+                <button class="btn btn-link col-12" style="text-align:end;">
+                    Forgot Password?
+                </button>
+            </div>
+        </EditForm>
+        <div class="separator" style="display: flex;align-items: center;">
+            <div class="line" style="flex-grow: 1; border-bottom: 1px solid #000; /* You can customize the color */ margin: 0 10px; /* Adjust the margin as needed */"></div>
+            <div class="text">OR</div>
+            <div class="line" style="flex-grow: 1; border-bottom: 1px solid #000; /* You can customize the color */ margin: 0 10px; /* Adjust the margin as needed */"></div>
+        </div>
+        <button class="btn btn-warning col-12 col-sm-9 col-md-7 col-lg-5 col-xl-4">
+            <NavLink class="nav-link" href="registration" style="padding: revert;color: inherit;">Register Now</NavLink>
+        </button>
+    </div>
+</div>
+
+@inject IUserHttpRepository UserRepo
+@inject NavigationManager UriHelper
+@inject SessionStorageAccessor SessionStorageAccessor
+@code{
+    private Hard75Shared.UserAccount userAttempt = new Hard75Shared.UserAccount();
+    string errorMessage = "";
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await SessionStorageAccessor.RemoveAsync("userEmail");
+        await SessionStorageAccessor.RemoveAsync("userID");
+    }
+
+    private async System.Threading.Tasks.Task AttemptLogin(EditContext editContext){
+        //using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
+        //ILogger logger = factory.CreateLogger("Home:AttemptLogin");
+        //logger.LogInformation("Attempted LogIn");
+        System.Console.WriteLine("Home:Attempt Login");
+        try
+        {
+            Hard75Shared.UserAccount userLoginAttempt = new Hard75Shared.UserAccount();
+            userLoginAttempt.email = userAttempt.email;
+            userLoginAttempt.pwd = userAttempt.pwd;
+            System.Console.WriteLine("Home:"+userLoginAttempt.ToString());
+            Hard75Shared.Response userConfirmation = await UserRepo.LoginUser(userLoginAttempt);
+            System.Console.WriteLine("Home:"+userConfirmation.statusCode.ToString());
+            if (userConfirmation.statusCode < 100)
+            {
+                errorMessage = userConfirmation.message;
+            }
+            else if (userConfirmation.statusCode >= 100 && userConfirmation.statusCode < 900)
+            {
+                //Success   
+                //Hard75Shared.UserAccount userConfirmed = JsonConvert.DeserializeObject<Hard75Shared.UserAccount>(userConfirmation.message);
+                await SessionStorageAccessor.SetValueAsync("userEmail", userAttempt.email);
+                UriHelper.NavigateTo("/mfagen");
+            }
+            System.Console.WriteLine(errorMessage);
+            return;
+        } catch(Exception ex)
+        {
+            return;
+        }
+    }
+}

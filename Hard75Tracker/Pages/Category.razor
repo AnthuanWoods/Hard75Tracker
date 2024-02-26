@@ -1,0 +1,58 @@
+﻿@page "/category"
+@using Hard75Tracker.Models
+
+
+<PageTitle>Category Management</PageTitle>
+
+<div>
+    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+        75 Hard Investment
+    </h1>
+
+    <h2>
+        This page is used to manage the category or grouping of tasks.
+    </h2>
+
+    <table>
+        <tr>
+            Category
+        </tr>
+        <tr style="padding-left:30px;">
+            <input type="checkbox" name="Task1" />
+            <label for="Task1">Task 1</label>
+        </tr>
+        <tr style="padding-left:60px;">
+            <input type="checkbox" name="Task1.1" />
+            <label for="Task1.1">Task .11</label>
+        </tr>
+    </table>
+</div>
+
+@inject NavigationManager UriHelper
+@inject SessionStorageAccessor SessionStorageAccessor
+@code {
+    public int CurrentStreak = 0;
+    public int MaxStreak = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        if(userID is null)
+        {
+            UriHelper.NavigateTo("");
+        }
+    }
+
+    private class userattempt
+    {
+        public string useremail { get; set; }
+        public int userpwd { get; set; }
+    }
+
+    private userattempt newuser = new userattempt();
+
+    private void AttemptLogin()
+    {
+
+    }
+}

@@ -1,0 +1,102 @@
+@page "/registration"
+@using Hard75Tracker.Models
+@using Newtonsoft.Json;
+@using Microsoft.Extensions.Logging;
+@using BootstrapBlazor;
+
+<PageTitle>Registration</PageTitle>
+
+<div>
+    <p style="text-align:center;">
+        75 Hard Investment
+    </p>
+
+    @if (errorMessage.Length > 0)
+    {
+    <div>
+        <!--<Alert ShowDismiss="false" Color="Color.Danger">@errorMessage</Alert>-->
+            <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
+    </div>
+    }
+
+    <EditForm Model="@newuser" OnValidSubmit="@RegisterUser" FormName="LoginAttemptForm">
+        <DataAnnotationsValidator/>
+        <div class="align-content-center col-12" style="text-align: center;">
+            <input @bind-value="newuser!.firstName" name="firstName" type="text" placeholder="First Name" />
+        </div>
+        <div class="align-content-center col-12" style="text-align: center;">
+            <input @bind-value="newuser!.lastName" name="lastName" type="text" placeholder="Last Name" />
+        </div>
+         <div class="align-content-center col-12" style="text-align: center;">
+             <input @bind-value="newuser!.email" name="email" type="text" placeholder="User Email" />
+         </div>
+        <div class="align-content-center col-12" style="text-align: center;">
+            <input @bind-value="newuser!.pwd" name="pwd" type="password" placeholder="Password" />
+        </div>
+        <div class="align-content-center col-12" style="text-align: center;">
+            <input @bind-value="newuser!.pwd2" name="pwd2" type="password" placeholder="Confirm Password" />
+        </div>
+        <div class="align-content-center col-12" style="text-align: center;">
+            <select @bind="newuser!.mfaID" name="mfa">
+                <option value="authenticator" disabled>Authenticator App</option>
+                <option value="email" selected>Email</option>
+            </select>
+        </div>
+        <div class="align-content-center col-12">
+            <button class="btn btn-success col-6">
+                Submit
+            </button>
+        </div>
+    </EditForm>
+</div>
+
+@inject NavigationManager UriHelper
+@inject SessionStorageAccessor SessionStorageAccessor
+@inject IUserHttpRepository UserRepo
+@code{
+    
+    private string errorMessage = "";
+
+    private Hard75Shared.UserAccount newuser = new Hard75Shared.UserAccount();
+    
+    //[Inject]
+    //public IUserHttpRepository UserRepo { get; set; }
+    
+    void FormSubmitted(EditContext editContext){
+        bool formIsValid = editContext.Validate();
+    }
+
+    private async System.Threading.Tasks.Task RegisterUser(){
+        try{
+            if (newuser.pwd2 == newuser.pwd){
+                /*UserAccount registereduser = new UserAccount();
+                registereduser.email = newuser.email;
+                registereduser.firstName = newuser.firstName;
+                registereduser.lastName = newuser.lastName;
+                registereduser.pwd = newuser.pwd;
+                registereduser.salt="";
+                registereduser.mfaID = newuser.mfaID;
+                registereduser.mfaID = "email";*/
+                Hard75Shared.Response apiResponse = await UserRepo.RegisterUser(newuser);
+                if (apiResponse.statusCode < 100)
+                {
+                    errorMessage = apiResponse.message;
+                }
+                else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+                {
+                    //Success
+                    Hard75Shared.UserAccount userConfirmed = JsonConvert.DeserializeObject<Hard75Shared.UserAccount>(apiResponse.message);
+                    await SessionStorageAccessor.SetValueAsync("userEmail", newuser.email);
+                    System.Console.WriteLine(userConfirmed.ToString());
+                    UriHelper.NavigateTo("mfagen");
+                }
+            } else{
+                //Passwords Must Match Validation
+                errorMessage = "Passwords must match.";
+            }
+        }
+        catch(Exception e){
+
+        }
+    }
+}

@@ -1,0 +1,121 @@
+﻿@page "/mfaverify"
+@using Hard75Tracker.Models
+
+<PageTitle>MFA Verification</PageTitle>
+
+<div>
+    <p style="text-align:center;">
+        75 Hard Investment
+    </p>
+    <div class="align-content-center col-12" style="text-align: center;">
+        An email has been sent to your email address. Please enter the code received below.
+    </div>
+    <EditForm Model="@userToValidate" OnValidSubmit="@verifyNumber" FormName="LoginAttemptForm">
+        <div class="align-content-center col-12" style="text-align: center;">
+            <input @bind-value="userToValidate!.numberToVerify" name="mfaCode" type="text" placeholder="Enter MFA Code" />
+        </div>
+        <div class="align-content-center col-12">
+            <button class="btn btn-success col-6">
+                Submit
+            </button>
+        </div>
+    </EditForm>
+
+</div>
+
+
+
+@inject NavigationManager UriHelper
+
+@inject SessionStorageAccessor SessionStorageAccessor
+
+@code {
+
+
+
+    string userID = "";
+
+    string mdaID = "";
+
+    string userEmail = "";
+
+    int verificationNumber = 0;
+
+
+
+    private class mfaUser
+    {
+
+        public string numberToVerify { get; set; }
+
+    }
+
+
+
+    mfaUser userToValidate = new mfaUser();
+
+
+
+    [Inject]
+
+    public IUserHttpRepository UserRepo { get; set; }
+
+
+
+
+
+    protected override async Task OnInitializedAsync()
+
+    {
+
+        System.Console.WriteLine("OnInitialized");
+
+        userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+
+        System.Console.WriteLine(userID);
+
+        System.Console.WriteLine("TEST");
+
+        mdaID = await SessionStorageAccessor.GetValueAsync<string>("MFA");
+
+        userEmail = await SessionStorageAccessor.GetValueAsync<string>("userEmail");
+
+        Random rnd = new Random();
+
+        verificationNumber = rnd.Next(10000, 99999);
+
+        System.Console.WriteLine(verificationNumber.ToString());
+
+        System.Console.WriteLine(userEmail);
+
+        string emailBody = "<html><body>The verification code is " + verificationNumber.ToString() + ".</body></html>";
+
+        var emailSent = UserRepo.sendEmail(userEmail, "Verification Code", emailBody);
+
+        System.Console.WriteLine(emailSent);
+
+
+
+    }
+
+
+
+
+
+    public void verifyNumber()
+    {
+
+        if (userToValidate.numberToVerify == verificationNumber.ToString())
+        {
+
+            System.Console.WriteLine("Confirmed");
+
+            UriHelper.NavigateTo("routine");
+
+        }
+
+    }
+
+
+
+}

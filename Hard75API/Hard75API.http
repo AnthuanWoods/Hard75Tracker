@@ -1,0 +1,6 @@
+@Hard75API_HostAddress = http://localhost:5185
+
+GET {{Hard75API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,163 @@
+﻿@page "/tasks"
+@using Hard75Tracker.Models
+@using Newtonsoft.Json;
+
+<PageTitle>Task Management</PageTitle>
+
+<div>
+    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+        75 Hard Investment
+    </h1>
+
+    <h2>
+        This page is used to manage individual tasks.
+    </h2>
+    <Button Color="ButtonColor.Success" @onclick="NewTaskComponent">
+        Add Task
+    </Button>
+    
+
+    <Grid @ref="grid"
+      TItem="Hard75Shared.Task"
+      Class="table table-hover table-bordered table-striped"
+          DataProvider="TasksDataProvider"
+      AllowFiltering="true"
+      Responsive="true"
+    EmptyText="No records to display">
+
+        <GridColumn TItem="Hard75Shared.Task" HeaderText="Name" PropertyName="Name">
+            @context.taskName
+        </GridColumn>
+        <GridColumn TItem="Hard75Shared.Task" Filterable="false" Sortable="false">
+            <HeaderContent>
+                Edit
+            </HeaderContent>
+            <ChildContent>
+                <Button Color="ButtonColor.Info" @onclick="@(e => ShowTaskComponent(@context))">>Edit</Button>
+            </ChildContent>
+        </GridColumn>
+    </Grid>
+
+    
+
+    @if (currentTasks == null)
+    {
+        <p><em>There are currently no tasks</em></p>
+    }
+    else
+    {
+        <table>
+            
+            @foreach (Hard75Shared.Task task in currentTasks)
+            {
+                <tr style="padding-left:30px;">
+                    <td>
+                        task.taskName
+                    </td>
+                    <td>
+                        <Button>
+                            Edit
+                        </Button>
+                    </td>
+                </tr>
+            }
+        </table>
+    }
+</div>
+
+@inject NavigationManager UriHelper
+@inject SessionStorageAccessor SessionStorageAccessor
+@inject ITaskHttpRepository TaskRepo
+@code {
+    public int CurrentStreak = 0;
+    public int MaxStreak = 0;
+    private Hard75Shared.Task[]? currentTasks;
+    string userID = null;
+    string errorMessage;
+    string successMessage;
+    BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
+    private IEnumerable<Hard75Shared.Task> tasks = default!;
+    private Modal modal = default!;
+    string userEmail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        userEmail = await SessionStorageAccessor.GetValueAsync<string>("userEmail");
+        if ((userEmail == null) || (userID == null))
+        {
+            UriHelper.NavigateTo("");
+        }
+    }
+
+    private async Task<GridDataProviderResult<Hard75Shared.Task>> TasksDataProvider(GridDataProviderRequest<Hard75Shared.Task> request)
+    {
+        if(userID == null)
+        {
+            userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        }
+        Console.WriteLine(userID);
+        Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
+        if (tasks == null) // pull employees only one time for client-side filtering, sorting, and paging
+            tasks = GetListofTasks(apiResponse); // call a service or an API to pull the employees
+        Console.WriteLine("ReturnNothing");
+        Console.WriteLine(tasks);
+        if (tasks == null)
+        {
+            Console.WriteLine("Nothing");
+            return (new GridDataProviderResult<Hard75Shared.Task> { Data = new List<Hard75Shared.Task> (), TotalCount = 0 });
+        }
+        else
+        {
+            Console.WriteLine("Something");
+            return await Task.FromResult(request.ApplyTo(tasks));
+        }
+    }
+
+    private IEnumerable<Hard75Shared.Task> GetListofTasks(Hard75Shared.Response apiResponse)
+    {
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+            return currentTasks;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+            //Success
+            if (apiResponse.message == "{}")
+            {
+                return currentTasks;
+            }
+            else{
+                List<Hard75Shared.Task> currentTasks = JsonConvert.DeserializeObject<List<Hard75Shared.Task>>(apiResponse.message);
+                return currentTasks;
+            }
+        }
+        else
+        {
+            return currentTasks;
+        }
+    }
+
+    private async Task ShowTaskComponent(Hard75Shared.Task t) 
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("action", "update"); 
+        parameters.Add("task", t);
+        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
+        await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
+    }
+
+    private async Task NewTaskComponent()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("action", "create"); 
+        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
+        await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
+    }
+
+    private void ShowDTMessage(MouseEventArgs e){
+        successMessage = $"The current DT is: {DateTime.Now}.";
+    }
+
+}

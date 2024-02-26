@@ -1,0 +1,28 @@
+﻿<div class="row">
+    <div class="col-5 col-md-3 text-end">Task Id :</div>
+    <div class="col-7 col-md-9">@task?.taskID</div>
+</div>
+<div class="row">
+    <div class="col-5 col-md-3 text-end">Task Name :</div>
+    <div class="col-7 col-md-9">@task?.taskName</div>
+</div>
+<div class="row">
+    <div class="col-5 col-md-3 text-end">Task Description :</div>
+    <div class="col-7 col-md-9">@task?.taskDescription</div>
+</div>
+
+@code {
+    //private Hard75Shared.Task? task;
+
+    [Parameter] public Hard75Shared.Task task { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClickCallback { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // get employee with {EmployeeId} from DB
+
+        //task = new Hard75Shared.Task { FirstName = "Vikram", LastName = "Reddy" };
+
+        base.OnInitialized();
+    }
+}

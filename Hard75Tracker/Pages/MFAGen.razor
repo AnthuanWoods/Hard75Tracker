@@ -1,0 +1,116 @@
+@page "/mfagen"
+@layout FullPageLayout
+@using Hard75Tracker.Models
+@using Newtonsoft.Json;
+@using Microsoft.Extensions.Logging;
+@using BootstrapBlazor;
+
+<PageTitle>MFA Generation</PageTitle>
+
+<div>
+    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+        75 Hard Investment
+    </h1>
+
+    @if (errorMessage.Length > 0)
+    {
+    <div>
+        <!--<Alert ShowDismiss="false" Color="Color.Danger">@errorMessage</Alert>-->
+            <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
+    </div>
+    }
+    <div class="col-12 offset-sm-3 col-sm-6">    
+        <div class="align-content-center col-12" style="text-align: center;margin-bottom: 20px;">
+            An email with an authentication code has been sent to your email address. <br />
+            Please enter the code below.
+        </div>
+        <EditForm Model="@userToValidate" OnValidSubmit="@verifyNumber" FormName="LoginAttemptForm">
+            <div class="align-content-center col-12" style="text-align: center;margin-bottom: 20px;">
+                 <input @bind-value="userToValidate!.numberToVerify" name="mfaCode" type="text" placeholder="Enter MFA Code" />
+             </div>
+            <div class="align-content-center col-12">
+                <button class="btn btn-success col-12">
+                    Submit
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@inject NavigationManager UriHelper
+@inject SessionStorageAccessor SessionStorageAccessor
+@inject IUserHttpRepository UserRepo
+@code {
+
+    private string errorMessage = "";
+
+    string userID = "";
+    string mfaID = "";
+    string userEmail = "";
+    int verificationNumber = 0;
+    Random rnd = new Random();
+
+
+    private Hard75Shared.UserAccount currentUser = new Hard75Shared.UserAccount();
+
+    private class mfaUser {
+        public string numberToVerify { get; set; }
+    }
+
+    mfaUser userToValidate = new mfaUser();
+
+    protected override async Task OnInitializedAsync()
+    {
+        System.Console.WriteLine("OnInitialized");
+        userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        userEmail = await SessionStorageAccessor.GetValueAsync<string>("userEmail");
+        if (userEmail == null)
+        {
+            UriHelper.NavigateTo("/");
+        }
+        System.Console.WriteLine(userID);
+        System.Console.WriteLine("TEST");
+        System.Console.WriteLine(verificationNumber.ToString());
+        System.Console.WriteLine(userEmail);
+        generateMFAEmail();
+        //System.Console.WriteLine(emailSent);
+
+    }
+
+    public void generateMFAEmail()
+    {
+        verificationNumber = rnd.Next(10000, 99999);
+        string emailBody = "<html><body>The verification code is " + verificationNumber.ToString() + ".</body></html>";
+        var emailSent = UserRepo.sendEmail(userEmail, "Verification Code", emailBody);
+
+    }
+
+
+    public async Task verifyNumber(){
+        if (userToValidate.numberToVerify == verificationNumber.ToString()){
+            System.Console.WriteLine("Confirmed");
+            Hard75Shared.Response apiResponse = await UserRepo.ReadUser(userEmail);
+            if (apiResponse.statusCode < 100)
+            {
+                errorMessage = apiResponse.message;
+            }
+            else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+            {
+                //Success
+                Hard75Shared.UserAccount userConfirmed = JsonConvert.DeserializeObject<Hard75Shared.UserAccount>(apiResponse.message);
+                await SessionStorageAccessor.SetValueAsync("userID", userConfirmed.userID);
+                System.Console.WriteLine(userConfirmed.ToString());
+                UriHelper.NavigateTo("/routine");
+            }
+            else {
+                errorMessage = apiResponse.message;
+            }
+        }
+        else
+        {
+            errorMessage = "That was not the expected number. A new email will be generated.";
+            generateMFAEmail();
+        }
+    }
+
+}
