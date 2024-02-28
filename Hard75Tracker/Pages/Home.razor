@@ -12,10 +12,9 @@
     <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
         75 Hard Investment
     </h1>
-    @if (errorMessage.Length > 0)
+    @if (errorMessage.Length > 0) //Display error message in a red Alert on page if error received from API call
     {
     <div>
-        <!--<Alert ShowDismiss="false" Color="Color.Danger">@errorMessage</Alert>-->
             <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
     </div>
     }
@@ -57,40 +56,41 @@
 @inject NavigationManager UriHelper
 @inject SessionStorageAccessor SessionStorageAccessor
 @code{
+    //Initialize the userAttempt variable for the landing page form.
     private Hard75Shared.UserAccount userAttempt = new Hard75Shared.UserAccount();
+    //Initialize the error message variable.
     string errorMessage = "";
 
+    //Clear session variables once on landing page
     protected override async System.Threading.Tasks.Task OnInitializedAsync()
     {
         await SessionStorageAccessor.RemoveAsync("userEmail");
         await SessionStorageAccessor.RemoveAsync("userID");
     }
 
+    //User submits the LoginAttemptForm Form. If incorrect or error in the API call, the response will be stored in the errorMessage variable.
+    //If the email and password combination is correct, navigate to the mfa page for email MFA.
     private async System.Threading.Tasks.Task AttemptLogin(EditContext editContext){
-        //using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
-        //ILogger logger = factory.CreateLogger("Home:AttemptLogin");
-        //logger.LogInformation("Attempted LogIn");
-        System.Console.WriteLine("Home:Attempt Login");
         try
         {
             Hard75Shared.UserAccount userLoginAttempt = new Hard75Shared.UserAccount();
             userLoginAttempt.email = userAttempt.email;
             userLoginAttempt.pwd = userAttempt.pwd;
-            System.Console.WriteLine("Home:"+userLoginAttempt.ToString());
             Hard75Shared.Response userConfirmation = await UserRepo.LoginUser(userLoginAttempt);
-            System.Console.WriteLine("Home:"+userConfirmation.statusCode.ToString());
+            //Generic API standards: status Codes under 100 are handled
             if (userConfirmation.statusCode < 100)
             {
+                //Set the error message variable
                 errorMessage = userConfirmation.message;
             }
+            //Status codes greater than 900 are exception error codes. 
             else if (userConfirmation.statusCode >= 100 && userConfirmation.statusCode < 900)
             {
-                //Success   
-                //Hard75Shared.UserAccount userConfirmed = JsonConvert.DeserializeObject<Hard75Shared.UserAccount>(userConfirmation.message);
+                //set the userEmail Session Key
                 await SessionStorageAccessor.SetValueAsync("userEmail", userAttempt.email);
+                //Navigate to the mfa page.
                 UriHelper.NavigateTo("/mfagen");
             }
-            System.Console.WriteLine(errorMessage);
             return;
         } catch(Exception ex)
         {

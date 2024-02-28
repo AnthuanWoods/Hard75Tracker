@@ -8,22 +8,56 @@
 
 <Modal @ref="modal2">
     <BodyTemplate>
-        <EditForm Model="@task" OnValidSubmit="@createNewTask" FormName="CreateTaskForm">
-            <div class="row">
+        @if (taskMethod == "create")
+        {
+            <EditForm id="CreateTask" Model="@task" OnValidSubmit="@createNewTask" FormName="CreateTaskForm">
+                <div class="row">
                 <label for="taskName">
                     Task Name:
                 </label><br />
                 <input @bind-value="task!.taskName" name="taskName" type="text" style="width: inherit;" />
             </div>
             <div class="row">
-                <div class="col-5 col-md-3 text-end">Task Description :</div>
-                <div class="col-7 col-md-9">@task?.taskDescription</div>
+                <label for="taskDescription">
+                    Task Description:
+                </label><br />
+                <input @bind-value="task!.taskDescription" name="taskName" type="text" style="width: inherit;" />
             </div>
         </EditForm>
+        }
+        else @if (taskMethod == "update")
+        {
+            <EditForm id="CreateTask" Model="@task" OnValidSubmit="@createNewTask" FormName="CreateTaskForm">
+                <div class="row">
+                    <label for="taskName">
+                        Task Name:
+                    </label><br />
+                    <input @bind-value="task!.taskName" name="taskName" type="text" style="width: inherit;" />
+                </div>
+                <div class="row">
+                    <label for="taskDescription">
+                        Task Description:
+                    </label><br />
+                    <input @bind-value="task!.taskDescription" name="taskName" type="text" style="width: inherit;" />
+                </div>
+            </EditForm>
+        }
     </BodyTemplate>
     <FooterTemplate>
-        <button class="btn btn-success col-6">
-            Create New Task
+        @if (taskMethod == "create")
+        {
+            <button class="btn btn-success col-6" type="submit" form="CreateTask">
+                Create New Task
+            </button>
+        }
+        else if (taskMethod == "update")
+        {
+            <button class="btn btn-success col-6" type="submit" form="CreateTask">
+                Update Task
+            </button>
+        }
+        <button class="btn btn-success col-6" @onclick="OnHideModalClick">
+            Close
         </button>
     </FooterTemplate>
 </Modal>
@@ -82,6 +116,7 @@
     private Modal modal2 = default!;
     string userEmail;
     public Hard75Shared.Task task;
+    public string taskMethod = "";
     protected override async Task OnInitializedAsync()
     {
         userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
@@ -144,18 +179,24 @@
     private async Task ShowTaskComponent(Hard75Shared.Task t) 
     {
         var parameters = new Dictionary<string, object>();
-        parameters.Add("method", "update"); 
+        parameters.Add("method", "update");
+        taskMethod = "update";
+        task = t;
         parameters.Add("task", t);
         parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
-        await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
+        //await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
+        await modal2.ShowAsync();
     }
 
     private async Task NewTaskComponent()
     {
         var parameters = new Dictionary<string, object>();
-        parameters.Add("method", "create"); 
+        parameters.Add("method", "create");
+        taskMethod = "create";
+        task = new Hard75Shared.Task();
         parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
-        await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
+        //await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
+        await modal2.ShowAsync();
     }
 
     private void ShowDTMessage(MouseEventArgs e){
@@ -186,6 +227,11 @@
 
         }*/
 
+    }
+
+    private async Task OnHideModalClick()
+    {
+        await modal.HideAsync();
     }
 
 }
