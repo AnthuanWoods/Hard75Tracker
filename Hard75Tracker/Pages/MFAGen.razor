@@ -13,9 +13,8 @@
     </h1>
 
     @if (errorMessage.Length > 0)
-    {
+    {//Display error message in an alert box.
     <div>
-        <!--<Alert ShowDismiss="false" Color="Color.Danger">@errorMessage</Alert>-->
             <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
     </div>
     }
@@ -41,54 +40,54 @@
 @inject SessionStorageAccessor SessionStorageAccessor
 @inject IUserHttpRepository UserRepo
 @code {
-
+    //initialize errorMessage variable
     private string errorMessage = "";
-
+    //initialize userID for session variable
     string userID = "";
-    string mfaID = "";
+    //initialize userEmail for sesion variable
     string userEmail = "";
+    //initialize verificationNumber variable for MFA
     int verificationNumber = 0;
+    //initialize randomizer variable
     Random rnd = new Random();
-
-
-    private Hard75Shared.UserAccount currentUser = new Hard75Shared.UserAccount();
-
+    //private class created for the form. Only needed on this page, decided against making a class file.
     private class mfaUser {
         public string numberToVerify { get; set; }
     }
-
+    //initialize local private class for form
     mfaUser userToValidate = new mfaUser();
 
+    //Set the userEmail variable. If no active session, redirect to the startup page.
     protected override async Task OnInitializedAsync()
     {
-        System.Console.WriteLine("OnInitialized");
-        userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        //userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        //setting userEmail variable to session userEmail key.
         userEmail = await SessionStorageAccessor.GetValueAsync<string>("userEmail");
+        //redirect to the main page if no active session.
         if (userEmail == null)
         {
             UriHelper.NavigateTo("/");
         }
-        System.Console.WriteLine(userID);
-        System.Console.WriteLine("TEST");
-        System.Console.WriteLine(verificationNumber.ToString());
-        System.Console.WriteLine(userEmail);
+        //Call the function to send the MFA email
         generateMFAEmail();
-        //System.Console.WriteLine(emailSent);
-
     }
 
+    //Generates a random 5 digit number and calls the sendEmail function.
     public void generateMFAEmail()
     {
+        //assign a random 5 digit number to the verificationNumber variable
         verificationNumber = rnd.Next(10000, 99999);
+        //create the email body string
         string emailBody = "<html><body>The verification code is " + verificationNumber.ToString() + ".</body></html>";
+        //call the sendEmail function.
         var emailSent = UserRepo.sendEmail(userEmail, "Verification Code", emailBody);
-
     }
 
-
+    //Verify the input matches the expected MFA value and verifies the user exists in the database before proceeding to the main Routine page.
     public async Task verifyNumber(){
+        //Decides if the number matches the expected number. If it matches, continue. If it does not match, generate another MFA email with a new number.
         if (userToValidate.numberToVerify == verificationNumber.ToString()){
-            System.Console.WriteLine("Confirmed");
+            //Calls the ReadUser function to determine if the useremail exists within the system.
             Hard75Shared.Response apiResponse = await UserRepo.ReadUser(userEmail);
             if (apiResponse.statusCode < 100)
             {
@@ -96,10 +95,11 @@
             }
             else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
             {
-                //Success
+                //Create the userConfirmed variable and add available user information.
                 Hard75Shared.UserAccount userConfirmed = JsonConvert.DeserializeObject<Hard75Shared.UserAccount>(apiResponse.message);
+                //Assign the session key userID to the ID of the current user
                 await SessionStorageAccessor.SetValueAsync("userID", userConfirmed.userID);
-                System.Console.WriteLine(userConfirmed.ToString());
+                //Navigate to the routine page.
                 UriHelper.NavigateTo("/routine");
             }
             else {
@@ -109,6 +109,7 @@
         else
         {
             errorMessage = "That was not the expected number. A new email will be generated.";
+            //generate another MFA email, changing the expected number.
             generateMFAEmail();
         }
     }

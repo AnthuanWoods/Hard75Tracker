@@ -1,6 +1,7 @@
 ﻿@page "/tasks"
 @using Hard75Tracker.Models
 @using Newtonsoft.Json;
+@using BootstrapBlazor;
 
 <PageTitle>Task Management</PageTitle>
 
@@ -67,7 +68,12 @@
         <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
             Task Management
         </h1>
-
+        @if (errorMessage.Length > 0)
+        {//Display error message in an alert box.
+            <div>
+                <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
+            </div>
+        }
         <p>
             This page is used to manage individual tasks.
         </p>
@@ -182,9 +188,6 @@
         parameters.Add("method", "update");
         taskMethod = "update";
         task = t;
-        parameters.Add("task", t);
-        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
-        //await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
         await modal2.ShowAsync();
     }
 
@@ -194,38 +197,23 @@
         parameters.Add("method", "create");
         taskMethod = "create";
         task = new Hard75Shared.Task();
-        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
-        //await modal.ShowAsync<TaskModal>(title: "Task Details", parameters: parameters);
         await modal2.ShowAsync();
-    }
-
-    private void ShowDTMessage(MouseEventArgs e){
-        successMessage = $"The current DT is: {DateTime.Now}.";
     }
 
     private async System.Threading.Tasks.Task createNewTask()
 
     {
-
-
-
-        /*Hard75Shared.Response apiResponse = await TaskRepo.CreateTask(newuser);
-
+        Hard75Shared.Response apiResponse = await TaskRepo.CreateTask(task);
         if (apiResponse.statusCode < 100)
-
+        {
+            errorMessage = apiResponse.message;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
         {
 
-            //errorMessage = apiResponse.message;
+
 
         }
-
-        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
-
-        {
-
-
-
-        }*/
 
     }
 
