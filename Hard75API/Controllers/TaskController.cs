@@ -84,7 +84,7 @@ namespace Hard75API.Controllers
                 using (SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DatabaseConnectionString").ToString()))
                 {
                     con.Open();
-                    using (SqlCommand sqlcmd2 = new SqlCommand("Insert into Tasks(taskName, taskDescription,taskParentID, taskCategoryID,active,userID) Values (@taskName, @taskDescription, @taskParent, @taskCategory,1,@userID)", con))
+                    using (SqlCommand sqlcmd2 = new SqlCommand("Insert into Tasks(taskName, taskDescription,taskParentID, taskCategoryID,taskActive,userID) Values (@taskName, @taskDescription, @taskParent, @taskCategory,1,@userID)", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@taskName", task.taskName);
                         sqlcmd2.Parameters.AddWithValue("@taskDescription", task.taskDescription);

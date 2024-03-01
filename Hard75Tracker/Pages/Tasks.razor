@@ -73,6 +73,11 @@
             <div>
                 <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
             </div>
+        }else if(successMessage.Length > 0)
+        {
+            <div>
+                <Alert Color="AlertColor.Success"> @successMessage </Alert>
+            </div>
         }
         <p>
             This page is used to manage individual tasks.
@@ -114,8 +119,8 @@
     public int MaxStreak = 0;
     private Hard75Shared.Task[]? currentTasks;
     string userID = null;
-    string errorMessage;
-    string successMessage;
+    string errorMessage = "";
+    string successMessage = "";
     BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
     private IEnumerable<Hard75Shared.Task> tasks = default!;
     private Modal modal = default!;
@@ -197,6 +202,7 @@
         parameters.Add("method", "create");
         taskMethod = "create";
         task = new Hard75Shared.Task();
+        task.userID = Int32.Parse(userID);
         await modal2.ShowAsync();
     }
 
@@ -211,8 +217,13 @@
         else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
         {
 
+            Console.WriteLine(apiResponse.message);
+            successMessage = "Task successfully created.";
 
-
+        }
+        else
+        {
+            errorMessage = apiResponse.message;
         }
 
     }

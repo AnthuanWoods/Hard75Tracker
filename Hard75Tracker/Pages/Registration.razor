@@ -12,9 +12,8 @@
     </p>
 
     @if (errorMessage.Length > 0)
-    {
+    {//Error Message will be displayed in an alert message
     <div>
-        <!--<Alert ShowDismiss="false" Color="Color.Danger">@errorMessage</Alert>-->
             <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
     </div>
     }
@@ -54,29 +53,17 @@
 @inject SessionStorageAccessor SessionStorageAccessor
 @inject IUserHttpRepository UserRepo
 @code{
-    
+    //Initialize error message variable
     private string errorMessage = "";
-
+    //initialize newuser variable for form
     private Hard75Shared.UserAccount newuser = new Hard75Shared.UserAccount();
     
-    //[Inject]
-    //public IUserHttpRepository UserRepo { get; set; }
-    
-    void FormSubmitted(EditContext editContext){
-        bool formIsValid = editContext.Validate();
-    }
-
+    //if the initial password and confirmation password matches, then call the API to create the user account. Display relevant errors in the process.
     private async System.Threading.Tasks.Task RegisterUser(){
         try{
+            //if password and confirmation password are the same. 
             if (newuser.pwd2 == newuser.pwd){
-                /*UserAccount registereduser = new UserAccount();
-                registereduser.email = newuser.email;
-                registereduser.firstName = newuser.firstName;
-                registereduser.lastName = newuser.lastName;
-                registereduser.pwd = newuser.pwd;
-                registereduser.salt="";
-                registereduser.mfaID = newuser.mfaID;
-                registereduser.mfaID = "email";*/
+                //Attempt to register the user account
                 Hard75Shared.Response apiResponse = await UserRepo.RegisterUser(newuser);
                 if (apiResponse.statusCode < 100)
                 {
@@ -84,19 +71,19 @@
                 }
                 else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
                 {
-                    //Success
-                    Hard75Shared.UserAccount userConfirmed = JsonConvert.DeserializeObject<Hard75Shared.UserAccount>(apiResponse.message);
+                    //Registration Successful
+                    //set the session variable, userEmail.
                     await SessionStorageAccessor.SetValueAsync("userEmail", newuser.email);
-                    System.Console.WriteLine(userConfirmed.ToString());
+                    //navigate to the MFA generation page. 
                     UriHelper.NavigateTo("mfagen");
                 }
             } else{
-                //Passwords Must Match Validation
+                //Passwords did not match validation
                 errorMessage = "Passwords must match.";
             }
         }
         catch(Exception e){
-
+            errorMessage = e.ToString();
         }
     }
 }
