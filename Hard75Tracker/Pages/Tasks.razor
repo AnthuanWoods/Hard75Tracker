@@ -89,15 +89,8 @@
     </Button>
     
 
-    <Grid @ref="grid"
-      TItem="Hard75Shared.Task"
-      Class="table table-hover table-bordered table-striped"
-          DataProvider="TasksDataProvider"
-      AllowFiltering="true"
-      Responsive="true"
-    EmptyText="There are no active tasks.">
-
-        <GridColumn TItem="Hard75Shared.Task" HeaderText="Name" PropertyName="Name">
+    <Grid @ref="grid" TItem="Hard75Shared.Task" Class="table table-hover table-bordered table-striped" DataProvider="TasksDataProvider" AllowFiltering="true" Responsive="true" EmptyText="There are no active tasks.">
+        <GridColumn TItem="Hard75Shared.Task" HeaderText="Name">
             @context.taskName
         </GridColumn>
         <GridColumn TItem="Hard75Shared.Task" Filterable="false" Sortable="false">
@@ -140,26 +133,38 @@
 
     private async Task<GridDataProviderResult<Hard75Shared.Task>> TasksDataProvider(GridDataProviderRequest<Hard75Shared.Task> request)
     {
-        if(userID == null)
+        try
         {
-            userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+            if (userID == null)
+            {
+                userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+            }
+            Console.WriteLine(userID);
+            Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
+
+            if (tasks == null) // pull employees only one time for client-side filtering, sorting, and paging
+                tasks = GetListofTasks(apiResponse); // call a service or an API to pull the employees
+
+            Console.WriteLine("ReturnNothing");
+            Console.WriteLine(tasks);
+            if (tasks == null)
+            {
+                Console.WriteLine("Nothing");
+                return (new GridDataProviderResult<Hard75Shared.Task> { Data = new List<Hard75Shared.Task>(), TotalCount = 0 });
+            }
+            else
+            {
+                Console.WriteLine("Something");
+                //return (new GridDataProviderResult<Hard75Shared.Task> { Data = tasks, TotalCount = 1  });
+                request.ApplyTo(tasks);
+                Console.WriteLine("Applied");
+                return await Task.FromResult(request.ApplyTo(tasks));
+            }
         }
-        Console.WriteLine(userID);
-        Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
-        if (tasks == null) // pull employees only one time for client-side filtering, sorting, and paging
-            tasks = GetListofTasks(apiResponse); // call a service or an API to pull the employees
-        Console.WriteLine("ReturnNothing");
-        Console.WriteLine(tasks);
-        if (tasks == null)
+        catch (Exception ex)
         {
-            Console.WriteLine("Nothing");
-            return (new GridDataProviderResult<Hard75Shared.Task> { Data = new List<Hard75Shared.Task> (), TotalCount = 0 });
-        }
-        else
-        {
-            Console.WriteLine("Something");
-            return (new GridDataProviderResult<Hard75Shared.Task> { Data = tasks, TotalCount = 1  });
-        return await Task.FromResult(request.ApplyTo(tasks));
+            Console.WriteLine(ex);
+            return null;
         }
     }
 
@@ -178,6 +183,7 @@
                 return currentTasks;
             }
             else{
+                Console.WriteLine(apiResponse.message);
                 List<Hard75Shared.Task> currentTasks = JsonConvert.DeserializeObject<List<Hard75Shared.Task>>(apiResponse.message);
                 return currentTasks;
             }
@@ -221,6 +227,7 @@
 
             Console.WriteLine(apiResponse.message);
             successMessage = "Task successfully created.";
+            grid.RefreshDataAsync();
 
         }
         else

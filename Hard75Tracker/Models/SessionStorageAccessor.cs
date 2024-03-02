@@ -2,6 +2,7 @@
 
 namespace Hard75Tracker.Models
 {
+    //This class uses the js Object SessionStorageAccessor to interact with the browser window sessions. It can be used to set, remove, or retrieve session key values.
     public class SessionStorageAccessor : IAsyncDisposable
     {
         private Lazy<IJSObjectReference> _accessorJsRef = new();
