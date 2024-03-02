@@ -158,7 +158,8 @@
         else
         {
             Console.WriteLine("Something");
-            return await Task.FromResult(request.ApplyTo(tasks));
+            return (new GridDataProviderResult<Hard75Shared.Task> { Data = tasks, TotalCount = 1  });
+        return await Task.FromResult(request.ApplyTo(tasks));
         }
     }
 
@@ -193,6 +194,7 @@
         parameters.Add("method", "update");
         taskMethod = "update";
         task = t;
+        task.userID = Int32.Parse(userID);
         await modal2.ShowAsync();
     }
 

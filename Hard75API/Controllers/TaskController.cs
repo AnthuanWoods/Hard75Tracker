@@ -37,7 +37,7 @@ namespace Hard75API.Controllers
                 using (SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DatabaseConnectionString").ToString()))
                 {
                     con.Open();
-                    using (SqlCommand sqlcmd2 = new SqlCommand("Select * from Tasks where userID = @userID", con))
+                    using (SqlCommand sqlcmd2 = new SqlCommand("Select * from Tasks where userID = @userID and taskActive = 1", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@userID", userID);
                         SqlDataAdapter adapter = new SqlDataAdapter();
