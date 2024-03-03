@@ -14,6 +14,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Net.Http.Json;
 using System.Data.SqlTypes;
+using Serilog;
 
 namespace Hard75API.Controllers
 {
@@ -25,12 +26,18 @@ namespace Hard75API.Controllers
         public TaskController(IConfiguration configuration)
         {
             _configuration = configuration;
+            Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File("logs/mylog.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
         }
 
         [HttpGet]
         [Route("GetTasks")]
         public string GetTaskList(string userID)
         {
+            Log.Information("Get Task List");
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {
@@ -46,12 +53,14 @@ namespace Hard75API.Controllers
                         adapter.Fill(dt);
                         if (dt.Rows.Count > 0)
                         {
-                            Hard75Shared.Task[] tasks = [];
+                            Log.Information("Found Tasks");
+                            List<Hard75Shared.Task> tasks = new List<Hard75Shared.Task>();
                             foreach (DataRow record in dt.Rows)
                             {
                                 Hard75Shared.Task task = new Hard75Shared.Task();
                                 task.taskName = record[0].ToString();
-                                tasks.Append(task);
+                                tasks.Add(task);
+                                Log.Information(task.taskName);
                             }
                             response.statusCode = 108;
                             response.message = JsonConvert.SerializeObject(tasks);
