@@ -1,1 +1,1 @@
-namespace Hard75Shared{    public class Response    {        public int statusCode { get; set; }        public string message { get; set; }    }}
+namespace Hard75Shared{    //Shared class to capture the data and code from the API.    public class Response    {        public int statusCode { get; set; } //Status Code is used to determine the success of the API call.        public string message { get; set; }//This may return Data models or specific text from the API.    }}

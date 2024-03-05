@@ -228,6 +228,43 @@
 
     }
 
+    private async System.Threading.Tasks.Task updateTask()
+
+    {
+        Hard75Shared.Response apiResponse = await TaskRepo.UpdateTask(task);
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+
+            Console.WriteLine(apiResponse.message);
+            if (task.active == 0)
+            {
+                successMessage = "Task successfully deleted.";
+            }
+            else
+            {
+                successMessage = "Task successfully updated.";
+            }
+            grid.RefreshDataAsync();
+
+        }
+        else
+        {
+            errorMessage = apiResponse.message;
+        }
+
+    }
+
+    private async System.Threading.Tasks.Task deleteTask()
+
+    {
+        task.active = 0;
+        updateTask();
+    }
+
     private async Task OnHideModalClick()
     {
         await modal.HideAsync();

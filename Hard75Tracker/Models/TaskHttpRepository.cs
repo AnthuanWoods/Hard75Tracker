@@ -79,6 +79,14 @@ namespace Hard75Tracker.Models
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {
+                if (body.parentTaskID == null)
+                {
+                    body.parentTaskID = 0;
+                }
+                if (body.categoryID == null)
+                {
+                    body.categoryID = 0;
+                }
                 var callResponse = await _client.PostAsJsonAsync<Hard75Shared.Task>("task/UpdateTask", body);
                 //NOTE: PostAsJSONAsync no longer supported for the Methods. Must change to PostAsAsync and serialize input
                 var content = await callResponse.Content.ReadAsStringAsync();
