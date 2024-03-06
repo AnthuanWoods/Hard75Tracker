@@ -57,6 +57,12 @@
                 Update Task
             </button>
         }
+        else if (taskMethod == "remove")
+        {
+            <button class="btn btn-danger col-6" type="submit" form="CreateTask">
+                Delete Task
+            </button>
+        }
         <button class="btn btn-success col-6" @onclick="OnHideModalClick">
             Close
         </button>
@@ -190,6 +196,16 @@
         var parameters = new Dictionary<string, object>();
         parameters.Add("method", "update");
         taskMethod = "update";
+        task = t;
+        task.userID = Int32.Parse(userID);
+        await modal2.ShowAsync();
+    }
+
+    private async Task DeleteTaskComponent(Hard75Shared.Task t)
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("method", "remove");
+        taskMethod = "remove";
         task = t;
         task.userID = Int32.Parse(userID);
         await modal2.ShowAsync();
