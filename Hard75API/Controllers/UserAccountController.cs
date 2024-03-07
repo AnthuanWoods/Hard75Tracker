@@ -65,8 +65,6 @@ namespace Hard75API.Controllers
                                 response.statusCode = 100;
                                 string pwd = results.GetString(0).ToString();
                                 string saltstr = results.GetString(1).ToString();
-                                Log.Information("Password: " + pwd);
-                                Log.Information("Salt: " + results.GetValue(1).ToString());
                                 byte[] salt = Encoding.UTF8.GetBytes(results.GetValue(1).ToString());
                                 Log.Information("SigninAttempt:Validating Login");
                                 if (VerifyPassword(prevuser.pwd, pwd, saltstr))
@@ -203,58 +201,22 @@ namespace Hard75API.Controllers
                 response.message = "Create User Error:" + ex.ToString();
                 return JsonConvert.SerializeObject(response);
             }
-                //Hard75Shared.UserAccount tempuser = newuser;
-                //Console.WriteLine("CreateUserAccountAPI");
-                //Console.WriteLine(newuser.ToString());
-                //Response response = new Response();
-
-
-
-                //SqlDataAdapter adapter = new SqlDataAdapter("Insert into UserAccount(firstName,lastName,email,pwd,salt,active) values(@fname, @lname, @email,@pwd,@salt,1)", con);
-
-
-
-
-
-                //adapter.InsertCommand.Parameters.AddWithValue("@fname", newuser.firstName);
-                //adapter.InsertCommand.Parameters.AddWithValue("@lname", newuser.lastName);
-
-                //adapter.InsertCommand.Parameters.AddWithValue("@email", tempuser.email);
-                //adapter.InsertCommand.Parameters.AddWithValue("@pwd", hash);
-                //adapter.InsertCommand.Parameters.AddWithValue("@salt", salt);
-
-
-
-                //SqlDataAdapter adapter2 = new SqlDataAdapter();
-
-
-
-
-
-
-
-                //response.message = "{userID:" + results.GetInt64(0).ToString() + "}"; 
-
-
-
-
-            //}
-            //response.statusCode = 100;
-            //response.message = "User Created Successfully";
-            //return JsonConvert.SerializeObject(response);
         }
 
         [HttpPost]
         [Route("ModifyUser")]
         public string UpdateUserAccount([FromBody] Hard75Shared.UserAccount newuser)
         {
+            Log.Information("UpdateUserAccount:Function Start");
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {
                 var hash = HashPasword(newuser.pwd, out var salt);
+                Log.Information("UpdateUserAccount:Connecting to database");
                 using (SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DatabaseConnectionString").ToString()))
                 {
                     con.Open();
+                    Log.Information("UpdateUserAccount:Executing Select Query");
                     using (SqlCommand sqlcmd2 = new SqlCommand("Select userID from UserAccount where email = @email and active = 1", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@email", newuser.email);
@@ -262,19 +224,23 @@ namespace Hard75API.Controllers
                         {
                             if (results.HasRows)
                             {
+                                Log.Information("UpdateUserAccount:Found User Account");
                                 SqlDataAdapter adapter2 = new SqlDataAdapter("Update UserAccount set firstName = @fname, lastName = @lname, pwd = @pwd, salt = @salt, active = 1 where email = @email", con);
                                 adapter2.UpdateCommand.Parameters.AddWithValue("@email", newuser.email);
                                 adapter2.UpdateCommand.Parameters.AddWithValue("@lname", newuser.lastName);
                                 adapter2.UpdateCommand.Parameters.AddWithValue("@email", newuser.email);
                                 adapter2.UpdateCommand.Parameters.AddWithValue("@pwd", hash);
                                 adapter2.UpdateCommand.Parameters.AddWithValue("@salt", salt);
+                                Log.Information("UpdateUserAccount:Executing Update Statement");
                                 adapter2.UpdateCommand.ExecuteNonQuery();
                                 response.statusCode = 103;
                                 response.message = "User Updated Successfully";
+                                Log.Information("UpdateUserAccount:User Updated Successfully");
                                 return JsonConvert.SerializeObject(response);
                             }
                             else
                             {
+                                Log.Information("UpdateUserAccount:User Email does not exist");
                                 response.statusCode = 005;
                                 response.message = "User Email Address or Password is incorrect.";
                                 return JsonConvert.SerializeObject(response);
@@ -288,37 +254,14 @@ namespace Hard75API.Controllers
             {
                 response.statusCode = 996;
                 response.message = "Update User Error:" + ex.ToString();
+                Log.Information("UpdateUserAccount:Update Error: "+ ex.ToString());
                 return JsonConvert.SerializeObject(response);
             }
         }
 
-            /*adapter.SelectCommand.Parameters.AddWithValue("@email", newuser.email);
-
-            DataTable dt = new DataTable();
-            adapter.Fill(dt);
-            Response response = new Response();
-            if (dt.Rows.Count > 0)
-            {
-                SqlDataAdapter adapter2 = new SqlDataAdapter("Update UserAccount set firstName = @fname, lastName = @lname, pwd = @pwd, salt = @salt, active = 1 where email = @email", con);
-                adapter.SelectCommand.Parameters.AddWithValue("@fname", newuser.firstName);
-                adapter.SelectCommand.Parameters.AddWithValue("@lname", newuser.lastName);
-                adapter.SelectCommand.Parameters.AddWithValue("@email", newuser.email);
-                adapter.SelectCommand.Parameters.AddWithValue("@pwd", hash);
-                adapter.SelectCommand.Parameters.AddWithValue("@salt", salt);
-                response.statusCode = 100;
-                response.message = "User Created Successfully";
-                return JsonConvert.SerializeObject(response);
-            }
-            else
-            {
-                response.statusCode = 10;
-                response.message = "User Email Address or Password is incorrect.";
-                return JsonConvert.SerializeObject(response);
-            }
-        }*/
-
         string HashPasword(string password, out string saltconvert)
         {
+            Log.Information("HashPasword:Function Start");
             byte[] salt = RandomNumberGenerator.GetBytes(keySize);
             saltconvert = Convert.ToHexString(salt);
             salt = Encoding.UTF8.GetBytes(saltconvert); 
@@ -333,6 +276,7 @@ namespace Hard75API.Controllers
 
         bool VerifyPassword(string password, string hash, string saltconvert)
         {
+            Log.Information("VerifyPassword:Function Start");
             byte[] salt = Encoding.UTF8.GetBytes(saltconvert);
             var hashToCompare = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, hashAlgorithm, keySize);
             return CryptographicOperations.FixedTimeEquals(hashToCompare, Convert.FromHexString(hash));

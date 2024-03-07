@@ -13,6 +13,19 @@
         This page is used to manage the category or grouping of tasks.
     </h2>
 
+    @if (errorMessage.Length > 0)
+    {//Display error message in an alert box.
+        <div>
+            <Alert Color="AlertColor.Danger"> @errorMessage </Alert>
+            </div>
+    }
+    else if (successMessage.Length > 0)
+    {
+        <div>
+            <Alert Color="AlertColor.Success"> @successMessage </Alert>
+            </div>
+    }
+
     <table>
         <tr>
             Category
@@ -33,7 +46,8 @@
 @code {
     public int CurrentStreak = 0;
     public int MaxStreak = 0;
-
+    string errorMessage = "";
+    string successMessage = "";
     protected override async Task OnInitializedAsync()
     {
         string userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
