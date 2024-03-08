@@ -4,6 +4,34 @@
 
 <PageTitle>Category Management</PageTitle>
 
+
+<Modal @ref="modal">
+    <BodyTemplate>
+        @if (categoryMethod == "create")
+        {
+            <EditForm id="CreateTask" Model="@cat" OnValidSubmit="@createNewCategory" FormName="CreateCategoryForm">
+                <div class="row">
+                    <label for="categoryName">
+                        Category Name:
+                    </label><br />
+                    <input @bind-value="cat!.categoryName" name="categoryName" type="text" style="width: inherit;" />
+                </div>
+            </EditForm>
+        }        
+    </BodyTemplate>
+    <FooterTemplate>
+        @if (categoryMethod == "create")
+        {
+            <button class="btn btn-success col-6" type="submit" form="CreateCategory">
+                Create New Category
+            </button>
+        }
+        <button class="btn btn-success col-6" @onclick="OnHideModalClick">
+            Close
+        </button>
+    </FooterTemplate>
+</Modal>
+
 <div>
     <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
         75 Hard Investment
@@ -43,11 +71,17 @@
 
 @inject NavigationManager UriHelper
 @inject SessionStorageAccessor SessionStorageAccessor
+@inject ICategoryHttpRepository CategoryRepo
 @code {
     public int CurrentStreak = 0;
     public int MaxStreak = 0;
     string errorMessage = "";
     string successMessage = "";
+    string categoryMethod = "";
+    private Modal modal = default!;
+    BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
+    Hard75Shared.Category cat;
+
     protected override async Task OnInitializedAsync()
     {
         string userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
@@ -68,5 +102,33 @@
     private void AttemptLogin()
     {
 
+    }
+
+    private async System.Threading.Tasks.Task createNewCategory()
+
+    {
+        Hard75Shared.Response apiResponse = await CategoryRepo.CreateCategory(cat);
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+
+            Console.WriteLine(apiResponse.message);
+            successMessage = "Category successfully created.";
+            grid.RefreshDataAsync();
+
+        }
+        else
+        {
+            errorMessage = apiResponse.message;
+        }
+
+    }
+
+    private async Task OnHideModalClick()
+    {
+        await modal.HideAsync();
     }
 }
