@@ -69,6 +69,7 @@ namespace Hard75API.Controllers
                         }
                         else
                         {
+                            Log.Information("No Task Found");
                             response.statusCode = 109;
                             response.message = "{}";
                             return JsonConvert.SerializeObject(response);
@@ -78,6 +79,7 @@ namespace Hard75API.Controllers
             }
             catch (Exception ex)
             {
+                Log.Information("Error: " + ex.ToString());
                 response.statusCode = 992;
                 response.message = "Select Task Error:" + ex.ToString();
                 return JsonConvert.SerializeObject(response);
@@ -88,12 +90,15 @@ namespace Hard75API.Controllers
         [Route("CreateTask")]
         public string CreateTask([FromBody] Hard75Shared.Task task)
         {
+            Log.Information("CreateTask: Started");
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {
+                Log.Information("CreateTask: Opening Connection"); 
                 using (SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DatabaseConnectionString").ToString()))
                 {
                     con.Open();
+                    Log.Information("CreateTask: Running Query");
                     using (SqlCommand sqlcmd2 = new SqlCommand("Insert into Tasks(taskName, taskDescription,taskParentID, taskCategoryID,taskActive,userID) Values (@taskName, @taskDescription, @taskParent, @taskCategory,1,@userID)", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@taskName", task.taskName);
@@ -106,12 +111,15 @@ namespace Hard75API.Controllers
                         adapter.InsertCommand.ExecuteNonQuery();
                         response.statusCode = 110;
                         response.message = "Task Created Successfully";
+                        Log.Information("CreateTask: Task Created");
                         return JsonConvert.SerializeObject(response);
+                        
                     }
                 }
             }
             catch (Exception ex)
             {
+                Log.Information("CreateTask: Error " + ex.ToString());
                 response.statusCode = 991;
                 response.message = "Create Task Error:" + ex.ToString();
                 return JsonConvert.SerializeObject(response);
@@ -122,12 +130,15 @@ namespace Hard75API.Controllers
         [Route("UpdateTask")]
         public string UpdateTask([FromBody] Hard75Shared.Task task)
         {
+            Log.Information("UpdateTask: Started"); 
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {
+                Log.Information("UpdateTask: Opening Connection");
                 using (SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DatabaseConnectionString").ToString()))
                 {
                     con.Open();
+                    Log.Information("UpdateTask: Running Query");
                     using (SqlCommand sqlcmd2 = new SqlCommand("Update Tasks set taskName = @taskName, taskDescription = @taskDescription, taskParentID = @taskParent, taskCategoryID = @taskCategory, active = @tactive where taskID = @tid and userID = @userid", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@taskName", task.taskName);
@@ -142,12 +153,14 @@ namespace Hard75API.Controllers
                         adapter.UpdateCommand.ExecuteNonQuery();
                         response.statusCode = 111;
                         response.message = "Task Updated Successfully";
+                        Log.Information("UpdateTask: Task Updated");
                         return JsonConvert.SerializeObject(response);
                     }
                 }
             }
             catch (Exception ex)
             {
+                Log.Information("UpdateTask: Error " + ex.ToString());
                 response.statusCode = 990;
                 response.message = "Update Task Error:" + ex.ToString();
                 return JsonConvert.SerializeObject(response);
