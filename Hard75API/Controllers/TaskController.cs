@@ -41,9 +41,11 @@ namespace Hard75API.Controllers
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {
+                Log.Information("GetTaskList: Opening DB Connection");
                 using (SqlConnection con = new SqlConnection(_configuration.GetConnectionString("DatabaseConnectionString").ToString()))
                 {
                     con.Open();
+                    Log.Information("GetTaskList: Selecting all active tasks");
                     using (SqlCommand sqlcmd2 = new SqlCommand("Select * from Tasks where userID = @userID and taskActive = 1", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@userID", userID);
