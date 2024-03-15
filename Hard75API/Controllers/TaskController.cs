@@ -60,7 +60,9 @@ namespace Hard75API.Controllers
                             foreach (DataRow record in dt.Rows)
                             {
                                 Hard75Shared.Task task = new Hard75Shared.Task();
-                                task.taskName = record[0].ToString();
+                                task.taskID = Int32.Parse(record[0].ToString());
+                                task.taskName = record[1].ToString();
+                                task.taskDescription = record[2].ToString();
                                 tasks.Add(task);
                                 Log.Information(task.taskName);
                             }
