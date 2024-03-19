@@ -29,10 +29,10 @@
         </GridColumn>
         <GridColumn TItem="Hard75Shared.Task" Filterable="false" Sortable="false">
             <HeaderContent>
-                Complete
+                Complete Task
             </HeaderContent>
             <ChildContent>
-                <Switch Value="agree" Label="Default switch checkbox input" />
+                <Switch Value="disagree" Label="" ValueExpression="() => agree" ValueChanged="taskStatusChange" />
             </ChildContent>
         </GridColumn>
     </Grid>
@@ -67,6 +67,7 @@
     BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
     private IEnumerable<Hard75Shared.Task> tasks = default!;
     private bool agree = true;
+    private bool disagree = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -139,6 +140,11 @@
         {
             return currentTasks;
         }
+    }
+
+    private void taskStatusChange(bool value)
+    {
+        
     }
 
     private void completeTask()

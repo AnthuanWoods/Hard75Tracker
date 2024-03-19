@@ -1,6 +1,7 @@
 ﻿@page "/category"
 @using Hard75Tracker.Models
-
+@using Newtonsoft.Json;
+@using BootstrapBlazor;
 
 <PageTitle>Category Management</PageTitle>
 
@@ -33,14 +34,7 @@
 </Modal>
 
 <div>
-    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
-        75 Hard Investment
-    </h1>
-
-    <h2>
-        This page is used to manage the category or grouping of tasks.
-    </h2>
-
+    
     @if (errorMessage.Length > 0)
     {//Display error message in an alert box.
         <div>
@@ -53,6 +47,35 @@
             <Alert Color="AlertColor.Success"> @successMessage </Alert>
             </div>
     }
+
+    <h1 style="text-align:center;margin-bottom: 20px;margin-top: revert;">
+        75 Hard Investment
+    </h1>
+
+    <h2>
+        This page is used to manage the category or grouping of tasks.
+    </h2>
+
+    <Button Color="ButtonColor.Success" @onclick="NewCategoryComponent" Style="margin-bottom:10px;">
+        Create Category
+    </Button>
+
+
+    <Grid @ref="grid" TItem="Hard75Shared.Category" Class="table table-hover table-bordered table-striped" DataProvider="CategoryDataProvider" AllowFiltering="true" Responsive="true" EmptyText="There are no active tasks.">
+        <GridColumn TItem="Hard75Shared.Category" HeaderText="Name">
+            @context.categoryName
+        </GridColumn>
+        <GridColumn TItem="Hard75Shared.Category" Filterable="false" Sortable="false">
+            <HeaderContent>
+                Edit
+            </HeaderContent>
+            <ChildContent>
+                <Button Color="ButtonColor.Info" @onclick="@(e => ShowCategoryComponent(@context))">Edit</Button>
+            </ChildContent>
+        </GridColumn>
+    </Grid>
+
+    
 
     <table>
         <tr>
@@ -79,29 +102,76 @@
     string successMessage = "";
     string categoryMethod = "";
     private Modal modal = default!;
-    BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
+    BlazorBootstrap.Grid<Hard75Shared.Category> grid = default!;
     Hard75Shared.Category cat;
+    string userID = null;
+    string userEmail = null;
+    private IEnumerable<Hard75Shared.Category> categories = default!;
+    private Hard75Shared.Category[]? currentCategories;
 
     protected override async Task OnInitializedAsync()
     {
-        string userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
-        if(userID is null)
+        userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+        userEmail = await SessionStorageAccessor.GetValueAsync<string>("userEmail");
+        if ((userEmail == null) || (userID == null))
         {
             UriHelper.NavigateTo("");
         }
     }
 
-    private class userattempt
+    private async Task<GridDataProviderResult<Hard75Shared.Category>> CategoryDataProvider(GridDataProviderRequest<Hard75Shared.Category> request)
     {
-        public string useremail { get; set; }
-        public int userpwd { get; set; }
+        try
+        {
+            if (userID == null)
+            {
+                userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
+            }
+            Hard75Shared.Response apiResponse = await CategoryRepo.ReadCategory(userID);
+
+            if (categories == null) // pull employees only one time for client-side filtering, sorting, and paging
+                categories = GetListofCategories(apiResponse); // call a service or an API to pull the employees
+
+            if (categories == null)
+            {
+                return (new GridDataProviderResult<Hard75Shared.Category> { Data = new List<Hard75Shared.Category>(), TotalCount = 0 });
+            }
+            else
+            {
+                return await Task.FromResult(request.ApplyTo(categories));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return null;
+        }
     }
 
-    private userattempt newuser = new userattempt();
-
-    private void AttemptLogin()
+    private IEnumerable<Hard75Shared.Category> GetListofCategories(Hard75Shared.Response apiResponse)
     {
-
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+            return currentCategories;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+            //Success
+            if (apiResponse.message == "{}")
+            {
+                return currentCategories;
+            }
+            else
+            {
+                List<Hard75Shared.Category> currentCategories = JsonConvert.DeserializeObject<List<Hard75Shared.Category>>(apiResponse.message);
+                return currentCategories;
+            }
+        }
+        else
+        {
+            return currentCategories;
+        }
     }
 
     private async System.Threading.Tasks.Task createNewCategory()
@@ -125,6 +195,26 @@
             errorMessage = apiResponse.message;
         }
 
+    }
+
+    private async Task ShowCategoryComponent(Hard75Shared.Category t)
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("method", "update");
+        categoryMethod = "update";
+        cat = t;
+        cat.userID = Int32.Parse(userID);
+        await modal.ShowAsync();
+    }
+
+    private async Task NewCategoryComponent()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("method", "create");
+        categoryMethod = "create";
+        cat = new Hard75Shared.Category();
+        cat.userID = Int32.Parse(userID);
+        await modal.ShowAsync();
     }
 
     private async Task OnHideModalClick()
