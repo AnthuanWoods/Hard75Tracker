@@ -1,7 +1,7 @@
 ﻿@page "/tasks"
 @using Hard75Tracker.Models
 @using Newtonsoft.Json;
-@using BootstrapBlazor;
+@using BlazorBootstrap;
 
 <PageTitle>Task Management</PageTitle>
 
@@ -234,14 +234,14 @@
 
             Console.WriteLine(apiResponse.message);
             successMessage = "Task successfully created.";
-            grid.RefreshDataAsync();
+            //grid.RefreshDataAsync();
 
         }
         else
         {
             errorMessage = apiResponse.message;
         }
-
+        await modal.HideAsync();
     }
 
     private async System.Threading.Tasks.Task updateTask()
@@ -271,6 +271,7 @@
         {
             errorMessage = apiResponse.message;
         }
+        await modal.HideAsync();
 
     }
 

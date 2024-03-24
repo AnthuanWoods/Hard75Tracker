@@ -57,11 +57,11 @@
     </h2>
 
     <Button Color="ButtonColor.Success" @onclick="NewCategoryComponent" Style="margin-bottom:10px;">
-        Create Category
+        Add Category
     </Button>
 
 
-    <Grid @ref="grid" TItem="Hard75Shared.Category" Class="table table-hover table-bordered table-striped" DataProvider="CategoryDataProvider" AllowFiltering="true" Responsive="true" EmptyText="There are no active tasks.">
+    <Grid @ref="grid" TItem="Hard75Shared.Category" Class="table table-hover table-bordered table-striped" DataProvider="CategoryDataProvider" AllowFiltering="true" Responsive="true" EmptyText="There are no active categories.">
         <GridColumn TItem="Hard75Shared.Category" HeaderText="Name">
             @context.categoryName
         </GridColumn>
@@ -74,22 +74,6 @@
             </ChildContent>
         </GridColumn>
     </Grid>
-
-    
-
-    <table>
-        <tr>
-            Category
-        </tr>
-        <tr style="padding-left:30px;">
-            <input type="checkbox" name="Task1" />
-            <label for="Task1">Task 1</label>
-        </tr>
-        <tr style="padding-left:60px;">
-            <input type="checkbox" name="Task1.1" />
-            <label for="Task1.1">Task .11</label>
-        </tr>
-    </table>
 </div>
 
 @inject NavigationManager UriHelper
