@@ -33,11 +33,11 @@
                 <input @bind-value="userAttempt!.pwd" name="pwd" type="password" style="width: inherit;" />
             </div>
             <div class="col-12">
-                <button class="btn btn-success col-12">
+                <button class="btn btn-success col-12" type="submit">
                     Login
                 </button>
                 <button class="btn btn-link col-12" style="text-align:end;">
-                    Forgot Password?
+                    <NavLink class="nav-link" href="registration" style="padding: revert;color: inherit;">Forgot Password?</NavLink>
                 </button>
             </div>
         </EditForm>
@@ -96,5 +96,9 @@
         {
             return;
         }
+    }
+
+    private void ForgotPassword(){
+
     }
 }

@@ -19,11 +19,22 @@
                 </div>
             </EditForm>
         }        
+        else if (categoryMethod == "update")
+        {
+            <EditForm id="CreateTask" Model="@cat" OnValidSubmit="@updateCategory" FormName="CreateCategoryForm">
+                <div class="row">
+                    <label for="categoryName">
+                        Category Name:
+                    </label><br />
+                    <input @bind-value="cat!.categoryName" name="categoryName" type="text" style="width: inherit;" />
+                </div>
+            </EditForm>
+        }
     </BodyTemplate>
     <FooterTemplate>
         @if (categoryMethod == "create")
         {
-            <button class="btn btn-success col-6" type="submit" form="CreateCategory">
+            <button class="btn btn-success col-6" type="submit" form="CreateCategoryForm">
                 Create New Category
             </button>
         }
@@ -61,7 +72,7 @@
     </Button>
 
 
-    <Grid @ref="grid" TItem="Hard75Shared.Category" Class="table table-hover table-bordered table-striped" DataProvider="CategoryDataProvider" AllowFiltering="true" Responsive="true" EmptyText="There are no active categories.">
+    <Grid @ref="grid" TItem="Hard75Shared.Category" Class="table table-hover table-bordered table-striped" Data="datacat" AllowFiltering="true" Responsive="true" EmptyText="There are no active categories.">
         <GridColumn TItem="Hard75Shared.Category" HeaderText="Name">
             @context.categoryName
         </GridColumn>
@@ -71,6 +82,7 @@
             </HeaderContent>
             <ChildContent>
                 <Button Color="ButtonColor.Info" @onclick="@(e => ShowCategoryComponent(@context))">Edit</Button>
+                <Button Color="ButtonColor.Danger" @onclick="@(e => removeCategoryComponent(@context))">Remove</Button>
             </ChildContent>
         </GridColumn>
     </Grid>
@@ -87,6 +99,7 @@
     string categoryMethod = "";
     private Modal modal = default!;
     BlazorBootstrap.Grid<Hard75Shared.Category> grid = default!;
+    private List<Hard75Shared.Category> datacat = new List<Hard75Shared.Category>();
     Hard75Shared.Category cat;
     string userID = null;
     string userEmail = null;
@@ -101,50 +114,23 @@
         {
             UriHelper.NavigateTo("");
         }
+        Hard75Shared.Response apiResponse = await CategoryRepo.ReadCategory(userID);
+        datacat = GetListofCategories(apiResponse);
     }
 
-    private async Task<GridDataProviderResult<Hard75Shared.Category>> CategoryDataProvider(GridDataProviderRequest<Hard75Shared.Category> request)
-    {
-        try
-        {
-            if (userID == null)
-            {
-                userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
-            }
-            Hard75Shared.Response apiResponse = await CategoryRepo.ReadCategory(userID);
-
-            if (categories == null) // pull employees only one time for client-side filtering, sorting, and paging
-                categories = GetListofCategories(apiResponse); // call a service or an API to pull the employees
-
-            if (categories == null)
-            {
-                return (new GridDataProviderResult<Hard75Shared.Category> { Data = new List<Hard75Shared.Category>(), TotalCount = 0 });
-            }
-            else
-            {
-                return await Task.FromResult(request.ApplyTo(categories));
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            return null;
-        }
-    }
-
-    private IEnumerable<Hard75Shared.Category> GetListofCategories(Hard75Shared.Response apiResponse)
+    private List<Hard75Shared.Category> GetListofCategories(Hard75Shared.Response apiResponse)
     {
         if (apiResponse.statusCode < 100)
         {
             errorMessage = apiResponse.message;
-            return currentCategories;
+            return new List<Hard75Shared.Category>();
         }
         else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
         {
             //Success
             if (apiResponse.message == "{}")
             {
-                return currentCategories;
+                return new List<Hard75Shared.Category>();
             }
             else
             {
@@ -154,14 +140,17 @@
         }
         else
         {
-            return currentCategories;
+            return new List<Hard75Shared.Category>();
         }
     }
 
     private async System.Threading.Tasks.Task createNewCategory()
 
     {
+        Console.WriteLine("ButtonClicked");
+        Console.WriteLine(cat);
         Hard75Shared.Response apiResponse = await CategoryRepo.CreateCategory(cat);
+        
         if (apiResponse.statusCode < 100)
         {
             errorMessage = apiResponse.message;
@@ -171,13 +160,48 @@
 
             Console.WriteLine(apiResponse.message);
             successMessage = "Category successfully created.";
-            grid.RefreshDataAsync();
+            Hard75Shared.Response apiResponse2 = await CategoryRepo.ReadCategory(userID);
+            datacat = GetListofCategories(apiResponse2);
+            await grid.RefreshDataAsync();
 
         }
         else
         {
             errorMessage = apiResponse.message;
         }
+        await modal.HideAsync();
+    }
+
+    private async System.Threading.Tasks.Task updateCategory()
+
+    {
+        Hard75Shared.Response apiResponse = await CategoryRepo.UpdateCategory(cat);
+        if (apiResponse.statusCode < 100)
+        {
+            errorMessage = apiResponse.message;
+        }
+        else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
+        {
+            Console.WriteLine(apiResponse.message);
+            
+            if (cat.active == 0)
+            {
+                successMessage = "Category successfully deleted.";
+            }
+            else
+            {
+                successMessage = "Category successfully updated.";
+            }
+            Hard75Shared.Response apiResponse2 = await CategoryRepo.ReadCategory(userID);
+            datacat = GetListofCategories(apiResponse2);
+            await grid.RefreshDataAsync();
+
+        }
+        else
+        {
+            errorMessage = apiResponse.message;
+        }
+        await modal.HideAsync();
 
     }
 
@@ -191,6 +215,16 @@
         await modal.ShowAsync();
     }
 
+    private async Task removeCategoryComponent(Hard75Shared.Category t)
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("method", "remove");
+        categoryMethod = "remove";
+        cat = t;
+        cat.userID = Int32.Parse(userID);
+        await modal.ShowAsync();
+    }
+
     private async Task NewCategoryComponent()
     {
         var parameters = new Dictionary<string, object>();
@@ -199,6 +233,13 @@
         cat = new Hard75Shared.Category();
         cat.userID = Int32.Parse(userID);
         await modal.ShowAsync();
+    }
+
+    private async System.Threading.Tasks.Task deleteCategory()
+
+    {
+        cat.active = 0;
+        updateCategory();
     }
 
     private async Task OnHideModalClick()

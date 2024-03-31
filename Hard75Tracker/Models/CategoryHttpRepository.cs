@@ -19,6 +19,7 @@ namespace Hard75Tracker.Models
 
         public async Task<Hard75Shared.Response> CreateCategory(Hard75Shared.Category body)
         {
+            Console.WriteLine(body);
             Hard75Shared.Response response = new Hard75Shared.Response();
             try
             {

@@ -28,7 +28,7 @@
         }
         else @if (taskMethod == "update")
         {
-            <EditForm id="CreateTask" Model="@task" OnValidSubmit="@createNewTask" FormName="CreateTaskForm">
+            <EditForm id="CreateTask" Model="@task" OnValidSubmit="@updateTask" FormName="CreateTaskForm">
                 <div class="row">
                     <label for="taskName">
                         Task Name:
@@ -40,6 +40,23 @@
                         Task Description:
                     </label><br />
                     <input @bind-value="task!.taskDescription" name="taskName" type="text" style="width: inherit;" />
+                </div>
+            </EditForm>
+        }
+        else @if (taskMethod == "remove")
+        {
+            <EditForm id="CreateTask" Model="@task" OnValidSubmit="@deleteTask" FormName="CreateTaskForm">
+                <div class="row">
+                    <label for="taskName">
+                        Task Name:
+                    </label><br />
+                    <input @bind-value="task!.taskName" name="taskName" type="text" style="width: inherit;" disabled/>
+                </div>
+                <div class="row">
+                    <label for="taskDescription">
+                        Task Description:
+                    </label><br />
+                    <input @bind-value="task!.taskDescription" name="taskName" type="text" style="width: inherit;" disabled/>
                 </div>
             </EditForm>
         }
@@ -94,8 +111,7 @@
         Add Task
     </Button>
     
-
-    <Grid @ref="grid" TItem="Hard75Shared.Task" Class="table table-hover table-bordered table-striped" DataProvider="TasksDataProvider" AllowFiltering="true" Responsive="true" EmptyText="There are no active tasks.">
+    <Grid @ref="grid" TItem="Hard75Shared.Task" Class="table table-hover table-bordered table-striped" Data="datatasks" AllowFiltering="true" Responsive="true" EmptyText="There are no active tasks.">
         <GridColumn TItem="Hard75Shared.Task" HeaderText="Name">
             @context.taskName
         </GridColumn>
@@ -105,6 +121,7 @@
             </HeaderContent>
             <ChildContent>
                 <Button Color="ButtonColor.Info" @onclick="@(e => ShowTaskComponent(@context))">Edit</Button>
+                <Button Color="ButtonColor.Danger" @onclick="@(e => DeleteTaskComponent(@context))">Remove</Button>
             </ChildContent>
         </GridColumn>
     </Grid>
@@ -121,6 +138,7 @@
     string errorMessage = "";
     string successMessage = "";
     BlazorBootstrap.Grid<Hard75Shared.Task> grid = default!;
+    private List<Hard75Shared.Task> datatasks = new List<Hard75Shared.Task>();
     private IEnumerable<Hard75Shared.Task> tasks = default!;
     private Modal modal = default!;
     private Modal modal2 = default!;
@@ -135,50 +153,24 @@
         {
             UriHelper.NavigateTo("");
         }
+        Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
+        datatasks = GetListofTasks(apiResponse);
+        await grid.RefreshDataAsync();
     }
 
-    private async Task<GridDataProviderResult<Hard75Shared.Task>> TasksDataProvider(GridDataProviderRequest<Hard75Shared.Task> request)
-    {
-        try
-        {
-            if (userID == null)
-            {
-                userID = await SessionStorageAccessor.GetValueAsync<string>("userID");
-            }
-            Hard75Shared.Response apiResponse = await TaskRepo.ReadTask(userID);
-
-            if (tasks == null) // pull employees only one time for client-side filtering, sorting, and paging
-                tasks = GetListofTasks(apiResponse); // call a service or an API to pull the employees
-
-            if (tasks == null)
-            {
-                return (new GridDataProviderResult<Hard75Shared.Task> { Data = new List<Hard75Shared.Task>(), TotalCount = 0 });
-            }
-            else
-            {
-                return await Task.FromResult(request.ApplyTo(tasks));
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            return null;
-        }
-    }
-
-    private IEnumerable<Hard75Shared.Task> GetListofTasks(Hard75Shared.Response apiResponse)
+    private List<Hard75Shared.Task> GetListofTasks(Hard75Shared.Response apiResponse)
     {
         if (apiResponse.statusCode < 100)
         {
             errorMessage = apiResponse.message;
-            return currentTasks;
+            return null;
         }
         else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
         {
             //Success
             if (apiResponse.message == "{}")
             {
-                return currentTasks;
+                return null;
             }
             else{
                 List<Hard75Shared.Task> currentTasks = JsonConvert.DeserializeObject<List<Hard75Shared.Task>>(apiResponse.message);
@@ -187,7 +179,7 @@
         }
         else
         {
-            return currentTasks;
+            return null;
         }
     }
 
@@ -225,6 +217,7 @@
 
     {
         Hard75Shared.Response apiResponse = await TaskRepo.CreateTask(task);
+        await modal2.HideAsync();
         if (apiResponse.statusCode < 100)
         {
             errorMessage = apiResponse.message;
@@ -234,45 +227,58 @@
 
             Console.WriteLine(apiResponse.message);
             successMessage = "Task successfully created.";
-            //grid.RefreshDataAsync();
+            Hard75Shared.Response apiResponse2 = await TaskRepo.ReadTask(userID);
+            datatasks = GetListofTasks(apiResponse2);
+            await grid.RefreshDataAsync();
 
         }
         else
         {
             errorMessage = apiResponse.message;
         }
-        await modal.HideAsync();
+
     }
 
     private async System.Threading.Tasks.Task updateTask()
 
     {
         Hard75Shared.Response apiResponse = await TaskRepo.UpdateTask(task);
+        
         if (apiResponse.statusCode < 100)
         {
             errorMessage = apiResponse.message;
+            await modal2.HideAsync();
         }
         else if (apiResponse.statusCode >= 100 && apiResponse.statusCode < 900)
         {
 
             Console.WriteLine(apiResponse.message);
+            Console.WriteLine(task.active);
+            Console.WriteLine("Updating Task Complete");
             if (task.active == 0)
             {
                 successMessage = "Task successfully deleted.";
+                Console.WriteLine("Updating Task Complete2");
             }
             else
             {
                 successMessage = "Task successfully updated.";
             }
-            grid.RefreshDataAsync();
+            Hard75Shared.Response apiResponse2 = await TaskRepo.ReadTask(userID);
+            datatasks = new List<Hard75Shared.Task>();
+            datatasks = GetListofTasks(apiResponse2);
+            Console.WriteLine(apiResponse2);
+            await grid.RefreshDataAsync();
+            await modal2.HideAsync();
 
         }
         else
         {
             errorMessage = apiResponse.message;
+            await modal2.HideAsync();
         }
-        await modal.HideAsync();
 
+        
     }
 
     private async System.Threading.Tasks.Task deleteTask()
@@ -284,7 +290,7 @@
 
     private async Task OnHideModalClick()
     {
-        await modal.HideAsync();
+        await modal2.HideAsync();
     }
 
 }

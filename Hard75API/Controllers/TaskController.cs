@@ -143,7 +143,7 @@ namespace Hard75API.Controllers
                 {
                     con.Open();
                     Log.Information("UpdateTask: Running Query");
-                    using (SqlCommand sqlcmd2 = new SqlCommand("Update Tasks set taskName = @taskName, taskDescription = @taskDescription, taskParentID = @taskParent, taskCategoryID = @taskCategory, active = @tactive where taskID = @tid and userID = @userid", con))
+                    using (SqlCommand sqlcmd2 = new SqlCommand("Update Tasks set taskName = @taskName, taskDescription = @taskDescription, taskParentID = @taskParent, taskCategoryID = @taskCategory, taskActive = @tactive where taskID = @tid and userID = @userid", con))
                     {
                         sqlcmd2.Parameters.AddWithValue("@taskName", task.taskName);
                         sqlcmd2.Parameters.AddWithValue("@taskDescription", task.taskDescription);
