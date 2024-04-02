@@ -30,6 +30,17 @@
                 </div>
             </EditForm>
         }
+        else if (categoryMethod == "remove")
+        {
+            <EditForm id="CreateTask" Model="@cat" OnValidSubmit="@updateCategory" FormName="CreateCategoryForm">
+                <div class="row">
+                    <label for="categoryName">
+                        Category Name:
+                    </label><br />
+                    <input @bind-value="cat!.categoryName" name="categoryName" type="text" style="width: inherit;" disabled/>
+                </div>
+            </EditForm>
+        }
     </BodyTemplate>
     <FooterTemplate>
         @if (categoryMethod == "create")
