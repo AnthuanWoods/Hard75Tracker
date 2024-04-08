@@ -74,6 +74,31 @@ namespace Hard75Tracker.Models
             }
         }
 
+        public async Task<Hard75Shared.Response> FindDayTasks(string id)
+        {
+            Hard75Shared.Response response = new Hard75Shared.Response();
+            Console.WriteLine("Task:ReadTask");
+            try
+            {
+                var callResponse = await _client.GetAsync("task/GetTasks?userID=" + id);
+                //NOTE: PostAsJSONAsync no longer supported for the Methods. Must change to PostAsAsync and serialize input
+                var content = await callResponse.Content.ReadAsStringAsync();
+                Console.WriteLine(content.ToString());
+                if (!callResponse.IsSuccessStatusCode)
+                {
+                    throw new ApplicationException(content);
+                }
+                return JsonConvert.DeserializeObject<Hard75Shared.Response>(content); ;
+            }
+            catch (Exception ex)
+            {
+                response.statusCode = 007;
+                response.message = ex.Message;
+                return response;
+            }
+        }
+
+
         public async Task<Hard75Shared.Response> UpdateTask(Hard75Shared.Task body)
         {
             Hard75Shared.Response response = new Hard75Shared.Response();

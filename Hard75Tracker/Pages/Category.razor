@@ -49,6 +49,18 @@
                 Create New Category
             </button>
         }
+        else if (categoryMethod == "update")
+        {
+            <button class="btn btn-success col-6" type="submit" form="CreateCategoryForm">
+                Update Category
+            </button>
+        }
+        else if (categoryMethod == "remove")
+        {
+            <button class="btn btn-danger col-6" type="submit" form="CreateCategoryForm">
+                Remove Category
+            </button>
+        }
         <button class="btn btn-success col-6" @onclick="OnHideModalClick">
             Close
         </button>

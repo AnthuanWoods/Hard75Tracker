@@ -36,23 +36,6 @@
             </ChildContent>
         </GridColumn>
     </Grid>
-
-    @if ((currentTasks == null) || (currentTasks.Length == 0))
-    {
-        <p><em>There are currently no tasks</em></p>
-    }
-    else
-    {
-        <table>
-            @foreach (Hard75Shared.Task task in currentTasks)
-            {
-            <tr style="padding-left:30px;">
-                <input type="checkbox" name="task.taskName" />
-                <label for="task.taskName">task.taskName</label>
-            </tr>
-            }
-        </table>
-    }
 </div>
 
 @inject ITaskHttpRepository TaskRepo

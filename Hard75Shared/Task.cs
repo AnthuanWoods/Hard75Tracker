@@ -11,6 +11,7 @@ namespace Hard75Shared
         public string? taskName { get; set; }
         public string? taskDescription { get; set; }
         public int? parentTaskID { get; set; }
+        public bool? daycomplete { get; set; }
         public int? active { get; set; }
     }
 }
